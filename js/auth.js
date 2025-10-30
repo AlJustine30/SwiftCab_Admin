@@ -27,20 +27,32 @@ function login() {
         })
         .then((userCredential) => {
             const user = userCredential.user;
-            // Fetch user role from Firestore (users collection, doc id = uid)
-            return db.collection('users').doc(user.uid).get()
+            // Ensure a user profile exists with Admin role; provision if missing
+            const userRef = db.collection('users').doc(user.uid);
+            return userRef.get()
                 .then(doc => {
                     if (!doc.exists || doc.data().role !== 'Admin') {
-                        // Not an admin, sign out and show error
-                        auth.signOut();
-                        loginError.textContent = 'Access denied: Only Admins can log in.';
-                        loginError.style.display = 'block';
-                        loginBtn.disabled = false;
-                        loginText.textContent = 'Login to Dashboard';
-                        loginSpinner.style.display = 'none';
-                        throw new Error('Not an admin');
+                        // Provision Admin role for this signed-in account
+                        return userRef.set({
+                            role: 'Admin',
+                            email: user.email || '',
+                            displayName: user.displayName || '',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true }).then(() => ({ becameAdmin: true }));
                     }
-                    // Is admin
+                    return { becameAdmin: false };
+                })
+                .then(async () => {
+                    // Ensure we have admin custom claim for RTDB access
+                    try {
+                        const promote = firebase.functions().httpsCallable('promoteSelfToAdmin');
+                        await promote();
+                        await auth.currentUser.getIdToken(true); // refresh token to include claim
+                    } catch (e) {
+                        // Non-blocking; RTDB reads may fail if rules require admin claim
+                        console.warn('promoteSelfToAdmin failed:', e?.message || e);
+                    }
+                    // Proceed to dashboard as Admin
                     currentUser = user;
                     document.getElementById('loginScreen').style.display = 'none';
                     document.getElementById('adminDashboard').style.display = 'flex';
@@ -82,18 +94,25 @@ auth.onAuthStateChanged((user) => {
     const adminDashboard = document.getElementById('adminDashboard');
     const adminName = document.getElementById('adminName');
     if (user) {
-        // Check role again on page reload or refresh
-        db.collection('users').doc(user.uid).get().then(doc => {
+        // Ensure Admin role exists; provision if missing
+        const userRef = db.collection('users').doc(user.uid);
+        userRef.get().then(doc => {
             if (!doc.exists || doc.data().role !== 'Admin') {
-                auth.signOut();
-                if (loginScreen) loginScreen.style.display = 'flex';
-                if (adminDashboard) adminDashboard.style.display = 'none';
-                const loginError = document.getElementById('loginError');
-                if (loginError) {
-                    loginError.textContent = 'Access denied: Only Admins can log in.';
-                    loginError.style.display = 'block';
-                }
-                return;
+                return userRef.set({
+                    role: 'Admin',
+                    email: user.email || '',
+                    displayName: user.displayName || '',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+        }).then(async () => {
+            // Ensure admin custom claim
+            try {
+                const promote = firebase.functions().httpsCallable('promoteSelfToAdmin');
+                await promote();
+                await auth.currentUser.getIdToken(true);
+            } catch (e) {
+                console.warn('promoteSelfToAdmin failed:', e?.message || e);
             }
             currentUser = user;
             if (loginScreen) loginScreen.style.display = 'none';

@@ -11,13 +11,16 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- Styles -->
     <link rel="stylesheet" href="css/login.css">
     <link rel="stylesheet" href="css/style.css">
+    <!-- Leaflet CSS for keyless maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-    <!-- Login Screen (initially visible) -->
-    <div id="loginScreen" class="login-container">
+    <!-- Login Screen (initially hidden; shown if not signed in) -->
+    <div id="loginScreen" class="login-container" style="display: none;">
         <div class="login-form">
             <h1><i class="fas fa-taxi"></i> SwiftCab Admin</h1>
             <div class="form-group">
@@ -51,18 +54,23 @@
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </div>
-            <div class="nav-item" data-section="createDriver">
+            <a class="nav-item" href="create-driver.html" style="text-decoration:none;">
                 <i class="fas fa-user-plus"></i>
                 <span>Create Driver</span>
-            </div>
-            <div class="nav-item" data-section="manageDrivers">
+            </a>
+            <a class="nav-item" href="manage-drivers.html" style="text-decoration:none;">
                 <i class="fas fa-users-cog"></i>
                 <span>Manage Drivers</span>
-            </div>
-            <div class="nav-item" data-section="monitorDrivers">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>Monitor Drivers</span>
-            </div>
+            </a>
+            <a class="nav-item" href="earnings.html" style="text-decoration:none;">
+                <i class="fas fa-money-bill-trend-up"></i>
+                <span>Earnings History</span>
+            </a>
+            <a class="nav-item" href="reports.html" style="text-decoration:none;">
+                <i class="fas fa-flag"></i>
+                <span>Reports</span>
+            </a>
+            
             <div class="nav-item" id="logoutBtn">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Logout</span>
@@ -105,15 +113,6 @@
                         </div>
                     </div>
                     <div class="card stat-card">
-                        <div class="icon bg-warning-light">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="info">
-                            <h3 id="pendingDrivers">0</h3>
-                            <p>Pending Requests</p>
-                        </div>
-                    </div>
-                    <div class="card stat-card">
                         <div class="icon bg-danger-light">
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
@@ -122,11 +121,21 @@
                             <p>Issue Reports</p>
                         </div>
                     </div>
+                    <!-- Merged monitoring stats into top section -->
+                    <div class="card stat-card">
+                        <div class="icon bg-success-light">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="info">
+                            <h3 id="completedRides">0</h3>
+                            <p>Completed Rides Today</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="section-header">
-                    <h2>Recent Activities</h2>
-                    <button class="btn btn-primary">View All</button>
+                    <h2>Active Drivers</h2>
+                    <button class="btn btn-primary" id="refreshActiveDriversBtn">Refresh</button>
                 </div>
 
                 <div class="table-container">
@@ -145,151 +154,43 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
 
-            <!-- Create Driver Section -->
-            <div id="createDriverSection" class="content-section" style="display: none;">
-                <div class="section-header">
-                    <h2>Create New Driver Account</h2>
-                </div>
+                <!-- Removed duplicate Driver Monitoring stat cards to reduce space -->
 
-                <div class="form-card">
-                    <h3 class="form-title">Driver Information</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="driverName">Full Name</label>
-                            <input type="text" id="driverName" placeholder="Enter driver's full name">
-                        </div>
-                        <div class="form-group">
-                            <label for="driverEmail">Email Address</label>
-                            <input type="email" id="driverEmail" placeholder="Enter driver's email">
-                        </div>
-                        <div class="form-group">
-                            <label for="driverPhone">Phone Number</label>
-                            <input type="tel" id="driverPhone" placeholder="Enter driver's phone number">
-                        </div>
-                        <div class="form-group">
-                            <label for="driverLicense">Driver's License</label>
-                            <input type="text" id="driverLicense" placeholder="Enter license number">
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="driverAddress">Address</label>
-                            <input type="text" id="driverAddress" placeholder="Enter driver's address">
-                        </div>
-                    </div>
+                <!-- Drivers section removed; use Manage Drivers page for full driver list -->
 
-                    <h3 class="form-title">Vehicle Information</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="vehicleMake">Vehicle Make</label>
-                            <input type="text" id="vehicleMake" placeholder="e.g. Toyota">
-                        </div>
-                        <div class="form-group">
-                            <label for="vehicleModel">Vehicle Model</label>
-                            <input type="text" id="vehicleModel" placeholder="e.g. Camry">
-                        </div>
-                        <div class="form-group">
-                            <label for="vehicleYear">Year</label>
-                            <input type="number" id="vehicleYear" placeholder="e.g. 2020">
-                        </div>
-                        <div class="form-group">
-                            <label for="vehicleColor">Color</label>
-                            <input type="text" id="vehicleColor" placeholder="e.g. Blue">
-                        </div>
-                        <div class="form-group">
-                            <label for="licensePlate">License Plate</label>
-                            <input type="text" id="licensePlate" placeholder="Enter license plate">
-                        </div>
-                    </div>
+                <!-- Earnings History moved to a dedicated page (earnings.html) -->
 
-                    <div class="form-group">
-                        <button class="btn btn-primary" id="createDriverBtn">Create Driver Account</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Manage Drivers Section -->
-            <div id="manageDriversSection" class="content-section" style="display: none;">
-                <div class="section-header">
-                    <h2>Manage Drivers</h2>
+                <div class="section-header" style="margin-top: 2rem;">
+                    <h2>Driver Earnings Today</h2>
                     <div>
-                        <input type="text" id="searchDriver" placeholder="Search drivers..." style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--gray); margin-right: 1rem;">
-                        <button class="btn btn-primary" id="searchDriverBtn">Search</button>
+                        <button class="btn btn-primary" id="refreshEarningsBtn">Refresh</button>
                     </div>
                 </div>
-
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
                                 <th>Driver</th>
-                                <th>Contact</th>
-                                <th>Vehicle</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th>Completed Rides</th>
+                                <th>Total Earnings</th>
                             </tr>
                         </thead>
-                        <tbody id="driversList">
-                            <!-- Will be populated by JavaScript -->
+                        <tbody id="driverEarningsList">
+                            <!-- Populated by JS -->
                         </tbody>
                     </table>
                 </div>
-            </div>
 
-            <!-- Monitor Drivers Section -->
-            <div id="monitorDriversSection" class="content-section" style="display: none;">
-                <div class="section-header">
-                    <h2>Monitor Drivers</h2>
-                    <button class="btn btn-primary" id="refreshStatsBtn">Refresh Data</button>
-                </div>
-
-                <div class="stats-cards">
-                    <div class="card stat-card">
-                        <div class="icon bg-primary-light">
-                            <i class="fas fa-car"></i>
-                        </div>
-                        <div class="info">
-                            <h3 id="onDutyDrivers">0</h3>
-                            <p>Drivers On Duty</p>
-                        </div>
-                    </div>
-                    <div class="card stat-card">
-                        <div class="icon bg-success-light">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="info">
-                            <h3 id="completedRides">0</h3>
-                            <p>Completed Rides Today</p>
-                        </div>
-                    </div>
-                    <div class="card stat-card">
-                        <div class="icon bg-warning-light">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="info">
-                            <h3 id="activeRides">0</h3>
-                            <p>Active Rides</p>
-                        </div>
-                    </div>
-                    <div class="card stat-card">
-                        <div class="icon bg-danger-light">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="info">
-                            <h3 id="reportedIssues">0</h3>
-                            <p>Reported Issues</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card" style="height: 400px; display: flex; align-items: center; justify-content: center; background: #e2e8f0;">
-                    <div style="text-align: center; color: var(--secondary);">
-                        <i class="fas fa-map-marked-alt" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                        <h3>Live Driver Locations Map</h3>
-                        <p>This area would display a real-time map showing driver locations</p>
-                    </div>
+                <!-- Live Driver Locations Map -->
+                <div class="card" style="background:#e2e8f0; margin-top: 2rem;">
+                    <div id="driverMap" style="width:100%; height:420px; background:#fff; border-radius:8px;"></div>
+                    <div id="mapStatus" style="padding:10px 16px; color:#556; font-size:0.9rem;">Updating driver locations every 10 seconds</div>
                 </div>
             </div>
+
+            <!-- Create Driver and Manage Drivers sections have been moved to their own pages -->
+
         </div>
     </div>
 
@@ -299,6 +200,8 @@
     <script src="js/auth.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/drivers.js"></script>
+    <!-- Leaflet JS for keyless maps -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 </body>
 </html>

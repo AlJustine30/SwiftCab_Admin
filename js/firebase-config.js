@@ -12,3 +12,13 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const rtdb = firebase.database();
+
+// Gracefully close Firestore connections when the page is being unloaded
+// to avoid aborted long‑poll/XHR warnings in the console.
+window.addEventListener('pagehide', () => {
+  try { db.terminate(); } catch (e) { /* ignore */ }
+});
+window.addEventListener('unload', () => {
+  try { db.terminate(); } catch (e) { /* ignore */ }
+});

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwiftCab - Reports</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="adminDashboard" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="logo">
+                <i class="fas fa-taxi"></i>
+                <h2>SwiftCab</h2>
+            </div>
+            <a class="nav-item" href="index.html" style="text-decoration:none;">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a class="nav-item" href="create-driver.html" style="text-decoration:none;">
+                <i class="fas fa-user-plus"></i>
+                <span>Create Driver</span>
+            </a>
+            <a class="nav-item" href="manage-drivers.html" style="text-decoration:none;">
+                <i class="fas fa-users-cog"></i>
+                <span>Manage Drivers</span>
+            </a>
+            <a class="nav-item" href="earnings.html" style="text-decoration:none;">
+                <i class="fas fa-money-bill-trend-up"></i>
+                <span>Earnings History</span>
+            </a>
+            <div class="nav-item active">
+                <i class="fas fa-flag"></i>
+                <span>Reports</span>
+            </div>
+            <div class="nav-item" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1 id="sectionTitle">Issue Reports</h1>
+                <div class="user-info">
+                    <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="Admin User">
+                    <div>
+                        <div id="adminName">Admin User</div>
+                        <small>Super Administrator</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" style="display: block;">
+                <div class="section-header">
+                    <h2>Today’s Reports</h2>
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <button class="btn" id="filterAllBtn">All</button>
+                        <button class="btn" id="filterOpenBtn">Open</button>
+                        <button class="btn" id="filterResolvedBtn">Resolved</button>
+                        <button class="btn btn-primary" id="refreshReportsBtn">Refresh</button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:12px; color:#556;">
+                    <span>Reports today: </span>
+                    <strong id="reportsTodayCount">0</strong>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Category</th>
+                                <th>Message</th>
+                                <th>Driver</th>
+                                <th>Reporter</th>
+                                <th>Booking</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsList">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/reports.js"></script>
+</body>
+</html>

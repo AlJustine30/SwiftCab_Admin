@@ -21,7 +21,7 @@ function showSection(sectionName) {
             section: 'dashboardSection',
             nav: 'dashboard',
             title: 'Admin Dashboard',
-            callback: null
+            callback: typeof loadDriverStats === 'function' ? loadDriverStats : null
         },
         createDriver: {
             section: 'createDriverSection',
@@ -34,12 +34,6 @@ function showSection(sectionName) {
             nav: 'manageDrivers',
             title: 'Manage Drivers',
             callback: typeof loadDriversTable === 'function' ? loadDriversTable : null
-        },
-        monitorDrivers: {
-            section: 'monitorDriversSection',
-            nav: 'monitorDrivers',
-            title: 'Monitor Drivers',
-            callback: typeof loadDriverStats === 'function' ? loadDriverStats : null
         }
     };
 
@@ -70,8 +64,11 @@ function updateDashboardStats() {
     const totalDrivers = drivers.length;
     let activeDrivers = 0, pendingDrivers = 0;
     for (const driver of drivers) {
-        if (driver.status === 'active') activeDrivers++;
-        else if (driver.status === 'pending') pendingDrivers++;
+        const rs = driver.runtimeStatus;
+        // Treat Online or Booked as "active" on duty
+        if (rs === 'online' || rs === 'booked') activeDrivers++;
+        else if (!rs && driver.status === 'active') activeDrivers++;
+        if (driver.status === 'pending') pendingDrivers++;
     }
     const setText = (id, value) => {
         const el = document.getElementById(id);
@@ -88,32 +85,46 @@ function updateRecentActivities() {
     const activitiesContainer = document.getElementById('recentActivities');
     if (!activitiesContainer) return;
     activitiesContainer.innerHTML = '';
-    // Get recent drivers (last 5, most recent first)
-    const recentDrivers = drivers.slice(0, 5);
+    // Show only active drivers (online or booked)
+    const recentDrivers = drivers.filter(d => (d.runtimeStatus === 'online' || d.runtimeStatus === 'booked')).slice(0, 5);
     const now = new Date();
     for (const driver of recentDrivers) {
         const row = document.createElement('tr');
+        const rs = driver.runtimeStatus;
         let activity =
-            driver.status === 'active' ? 'Started shift' :
+            rs === 'booked' ? 'On a ride' :
+            rs === 'online' ? 'Online now' :
             driver.status === 'pending' ? 'New driver application' :
-            'Account created';
+            'Offline';
         // Use createdAt if available, else fallback to now
         let time = now.toLocaleTimeString();
         if (driver.createdAt && driver.createdAt.toDate) {
             time = driver.createdAt.toDate().toLocaleTimeString();
         }
+        const statusText = rs ? (rs === 'booked' ? 'Booked' : rs === 'online' ? 'Online' : 'Offline') : driver.status;
+        const statusClass = rs ? (rs === 'booked' ? 'status-booked' : rs === 'online' ? 'status-active' : 'status-inactive') : `status-${driver.status}`;
         row.innerHTML = `
             <td>${driver.name}</td>
             <td>${activity}</td>
             <td>${time}</td>
-            <td><span class="status status-${driver.status}">${driver.status}</span></td>
+            <td><span class="status ${statusClass}">${statusText}</span></td>
             <td>
-                <button class="action-btn btn-view">View</button>
-                <button class="action-btn btn-edit">Edit</button>
+                <button class="action-btn btn-view" data-driver-id="${driver.id}">View Location</button>
             </td>
         `;
         activitiesContainer.appendChild(row);
     }
+    // Attach click handlers to View Location buttons
+    activitiesContainer.querySelectorAll('.btn-view').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-driver-id');
+            if (typeof focusDriverOnMap === 'function') {
+                focusDriverOnMap(id);
+            } else {
+                showToast('Map not ready yet. Please try again.', 'error');
+            }
+        });
+    });
 }
 
 // Initialize event listeners

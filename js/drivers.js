@@ -65,12 +65,19 @@ function loadDriversTable() {
     const driversList = document.getElementById('driversList');
     if (!driversList) return;
     driversList.innerHTML = drivers.map(driver => {
-        const imgNum = Math.floor(Math.random() * 50) + 1;
+        const imgSrc = driver.profileImageUrl || 'img/driver-placeholder.svg';
+        const rs = driver.runtimeStatus || '';
+        const statusClass = rs
+            ? (rs === 'booked' ? 'status-booked' : rs === 'online' ? 'status-active' : 'status-inactive')
+            : `status-${driver.status}`;
+        const statusText = rs
+            ? (rs === 'booked' ? 'Booked' : rs === 'online' ? 'Online' : 'Offline')
+            : driver.status;
         return `
             <tr data-id="${driver.id}">
                 <td>
                     <div style="display: flex; align-items: center;">
-                        <img src="https://randomuser.me/api/portraits/men/${imgNum}.jpg" alt="Driver" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 0.75rem;">
+                        <img src="${imgSrc}" alt="Driver" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 0.75rem;">
                         <div>
                             <div>${driver.name}</div>
                             <small>ID: ${driver.id.substring(0, 8)}</small>
@@ -82,7 +89,7 @@ function loadDriversTable() {
                     <small>${driver.phone}</small>
                 </td>
                 <td>${driver.vehicle ? `${driver.vehicle.make} ${driver.vehicle.model} (${driver.vehicle.color})` : 'N/A'}</td>
-                <td><span class="status status-${driver.status}">${driver.status}</span></td>
+                <td><span class="status ${statusClass}">${statusText}</span></td>
                 <td>
                     <button class="action-btn btn-view" data-action="view">View</button>
                     <button class="action-btn btn-edit" data-action="edit">Edit</button>
@@ -110,12 +117,19 @@ function searchDrivers() {
     const driversList = document.getElementById('driversList');
     if (!driversList) return;
     driversList.innerHTML = filteredDrivers.map(driver => {
-        const imgNum = Math.floor(Math.random() * 50) + 1;
+        const imgSrc = driver.profileImageUrl || 'img/driver-placeholder.svg';
+        const rs = driver.runtimeStatus || '';
+        const statusClass = rs
+            ? (rs === 'booked' ? 'status-booked' : rs === 'online' ? 'status-active' : 'status-inactive')
+            : `status-${driver.status}`;
+        const statusText = rs
+            ? (rs === 'booked' ? 'Booked' : rs === 'online' ? 'Online' : 'Offline')
+            : driver.status;
         return `
             <tr data-id="${driver.id}">
                 <td>
                     <div style="display: flex; align-items: center;">
-                        <img src="https://randomuser.me/api/portraits/men/${imgNum}.jpg" alt="Driver" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 0.75rem;">
+                        <img src="${imgSrc}" alt="Driver" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 0.75rem;">
                         <div>
                             <div>${driver.name}</div>
                             <small>ID: ${driver.id.substring(0, 8)}</small>
@@ -127,7 +141,7 @@ function searchDrivers() {
                     <small>${driver.phone}</small>
                 </td>
                 <td>${driver.vehicle ? `${driver.vehicle.make} ${driver.vehicle.model} (${driver.vehicle.color})` : 'N/A'}</td>
-                <td><span class="status status-${driver.status}">${driver.status}</span></td>
+                <td><span class="status ${statusClass}">${statusText}</span></td>
                 <td>
                     <button class="action-btn btn-view" data-action="view">View</button>
                     <button class="action-btn btn-edit" data-action="edit">Edit</button>
@@ -149,7 +163,7 @@ function handleDriverAction(event) {
     if (!driver) return;
     const action = btn.getAttribute('data-action');
     if (action === 'view') {
-        alert(`Driver Details:\nName: ${driver.name}\nEmail: ${driver.email}\nPhone: ${driver.phone}\nStatus: ${driver.status}`);
+        alert(`Driver Details:\nName: ${driver.name}\nEmail: ${driver.email}\nPhone: ${driver.phone}\nStatus: ${driver.runtimeStatus || driver.status}`);
     } else if (action === 'edit') {
         const newStatus = prompt('Enter new status (active, inactive, pending):', driver.status);
         if (newStatus && ['active', 'inactive', 'pending'].includes(newStatus)) {

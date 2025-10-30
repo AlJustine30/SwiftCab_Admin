@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwiftCab - Earnings History</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="adminDashboard" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="logo">
+                <i class="fas fa-taxi"></i>
+                <h2>SwiftCab</h2>
+            </div>
+            <a class="nav-item" href="index.html" style="text-decoration:none;">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a class="nav-item" href="create-driver.html" style="text-decoration:none;">
+                <i class="fas fa-user-plus"></i>
+                <span>Create Driver</span>
+            </a>
+            <a class="nav-item" href="manage-drivers.html" style="text-decoration:none;">
+                <i class="fas fa-users-cog"></i>
+                <span>Manage Drivers</span>
+            </a>
+            <div class="nav-item active">
+                <i class="fas fa-money-bill-trend-up"></i>
+                <span>Earnings History</span>
+            </div>
+            <a class="nav-item" href="reports.html" style="text-decoration:none;">
+                <i class="fas fa-flag"></i>
+                <span>Reports</span>
+            </a>
+            <div class="nav-item" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1 id="sectionTitle">Earnings History</h1>
+                <div class="user-info">
+                    <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="Admin User">
+                    <div>
+                        <div id="adminName">Admin User</div>
+                        <small>Super Administrator</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" style="display: block;">
+                <div class="section-header">
+                    <h2>Select Date Range</h2>
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <input type="date" id="earningsStartDate" class="input" />
+                        <span>to</span>
+                        <input type="date" id="earningsEndDate" class="input" />
+                        <button class="btn btn-primary" id="applyEarningsHistoryBtn">Apply</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Driver</th>
+                                <th>Completed Rides</th>
+                                <th>Total Earnings</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="driverEarningsHistoryList">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking History Modal -->
+    <div id="historyModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div id="historyModal" style="background:#fff; border-radius:8px; width:90%; max-width:900px; max-height:80vh; overflow:auto; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid #eee;">
+                <h2 id="historyModalTitle" style="margin:0; font-size:20px;">Booking History</h2>
+                <button id="closeHistoryModalBtn" class="btn" style="background:#eee; color:#333;">Close</button>
+            </div>
+            <div style="padding:16px;">
+                <div id="historyModalMeta" style="margin-bottom:12px; color:#555;"></div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Pickup</th>
+                                <th>Destination</th>
+                                <th>Status</th>
+                                <th>Fare</th>
+                                <th>Booking ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="driverHistoryModalList">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/earnings.js"></script>
+</body>
+</html>
