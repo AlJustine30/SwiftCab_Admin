@@ -82,6 +82,7 @@ body {
     flex: 1;
     margin-left: var(--sidebar-width);
     padding: 1.5rem;
+    width: calc(100vw - var(--sidebar-width));
 }
 
 .header {
@@ -108,6 +109,7 @@ body {
     height: 40px;
     border-radius: 50%;
     margin-right: 0.75rem;
+    display: none !important;
 }
 
 /* Dashboard Cards */

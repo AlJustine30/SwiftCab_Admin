@@ -2,6 +2,7 @@
 function createDriver() {
     const name = document.getElementById('driverName').value;
     const email = document.getElementById('driverEmail').value;
+    const password = document.getElementById('driverPassword') ? document.getElementById('driverPassword').value : '';
     const phone = document.getElementById('driverPhone').value;
     const license = document.getElementById('driverLicense').value;
     const address = document.getElementById('driverAddress').value;
@@ -16,9 +17,14 @@ function createDriver() {
         showToast('Please fill in all required fields', 'error');
         return;
     }
+    if (!password || password.length < 6) {
+        showToast('Password must be at least 6 characters', 'error');
+        return;
+    }
     
     // Create driver object
     const driver = {
+        role: 'Driver',
         name,
         email,
         phone,
@@ -31,18 +37,73 @@ function createDriver() {
             color: vehicleColor,
             licensePlate
         },
-        status: 'pending',
+        status: 'active',
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
     
-    // Add driver to Firestore
-    db.collection("drivers").add(driver)
-        .then((docRef) => {
+    const createBtn = document.getElementById('createDriverBtn');
+    if (createBtn) createBtn.disabled = true;
+    const fn = (typeof functions !== 'undefined' ? functions : firebase.app().functions('us-central1')).httpsCallable('createDriverAccount');
+    fn({
+        name,
+        email,
+        password,
+        phone,
+        license,
+        address,
+        vehicle: {
+            make: vehicleMake,
+            model: vehicleModel,
+            year: vehicleYear,
+            color: vehicleColor,
+            licensePlate
+        }
+    })
+    .then(() => {
+        showToast('Driver created successfully!');
+        // Clear form
+        document.getElementById('driverName').value = '';
+        document.getElementById('driverEmail').value = '';
+        if (document.getElementById('driverPassword')) document.getElementById('driverPassword').value = '';
+        document.getElementById('driverPhone').value = '';
+        document.getElementById('driverLicense').value = '';
+        document.getElementById('driverAddress').value = '';
+        document.getElementById('vehicleMake').value = '';
+        document.getElementById('vehicleModel').value = '';
+        document.getElementById('vehicleYear').value = '';
+        document.getElementById('vehicleColor').value = '';
+        document.getElementById('licensePlate').value = '';
+        // Refresh driver data
+        if (typeof loadDriverData === 'function') loadDriverData();
+        if (createBtn) createBtn.disabled = false;
+    })
+    .catch((error) => {
+        const msg = (error && (error.message || error)) || 'Unknown error';
+        // Fallback #1: use a secondary Firebase app to create the user without affecting current session
+        let secondary;
+        try {
+            const cfg = firebase.app().options;
+            secondary = firebase.apps.find(a => a.name === 'Secondary') || firebase.initializeApp(cfg, 'Secondary');
+        } catch (_) {
+            secondary = null;
+        }
+        const createWithSecondary = secondary
+            ? secondary.auth().createUserWithEmailAndPassword(email, password)
+            : Promise.reject(new Error('Secondary app init failed'));
+
+        createWithSecondary
+        .then((cred) => {
+            const uid = cred && cred.user && cred.user.uid;
+            if (!uid) throw new Error('Failed to get new user UID');
+            return db.collection('drivers').doc(uid).set({ ...driver, uid })
+              .then(() => db.collection('users').doc(uid).set({ role: 'Driver', email, name, phone }, { merge: true }))
+              .then(() => ({ uid }));
+        })
+        .then(() => {
             showToast('Driver created successfully!');
-            
-            // Clear form
             document.getElementById('driverName').value = '';
             document.getElementById('driverEmail').value = '';
+            if (document.getElementById('driverPassword')) document.getElementById('driverPassword').value = '';
             document.getElementById('driverPhone').value = '';
             document.getElementById('driverLicense').value = '';
             document.getElementById('driverAddress').value = '';
@@ -51,13 +112,52 @@ function createDriver() {
             document.getElementById('vehicleYear').value = '';
             document.getElementById('vehicleColor').value = '';
             document.getElementById('licensePlate').value = '';
-            
-            // Refresh driver data
-            loadDriverData();
+            if (typeof loadDriverData === 'function') loadDriverData();
+            if (createBtn) createBtn.disabled = false;
         })
-        .catch((error) => {
-            showToast('Error creating driver: ' + error.message, 'error');
+        .catch(() => {
+            // Fallback #2: Identity Toolkit REST signUp
+            const apiKey = (firebase.app().options && firebase.app().options.apiKey) || '';
+            const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`;
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, returnSecureToken: true })
+            })
+            .then(res => res.json())
+            .then(json => {
+                const uid = json && json.localId;
+                if (!uid) throw new Error(json?.error?.message || 'Sign up failed');
+                return db.collection('drivers').doc(uid).set({ ...driver, uid })
+                  .then(() => db.collection('users').doc(uid).set({ role: 'Driver', email, name, phone }, { merge: true }))
+                  .then(() => ({ uid }));
+            })
+            .then(() => {
+                showToast('Driver created successfully!');
+                document.getElementById('driverName').value = '';
+                document.getElementById('driverEmail').value = '';
+                if (document.getElementById('driverPassword')) document.getElementById('driverPassword').value = '';
+                document.getElementById('driverPhone').value = '';
+                document.getElementById('driverLicense').value = '';
+                document.getElementById('driverAddress').value = '';
+                document.getElementById('vehicleMake').value = '';
+                document.getElementById('vehicleModel').value = '';
+                document.getElementById('vehicleYear').value = '';
+                document.getElementById('vehicleColor').value = '';
+                document.getElementById('licensePlate').value = '';
+                if (typeof loadDriverData === 'function') loadDriverData();
+                if (createBtn) createBtn.disabled = false;
+            })
+            .catch((err) => {
+                const m = (err && (err.message || err)) || msg;
+                showToast('Error creating driver: ' + m, 'error');
+                if (createBtn) createBtn.disabled = false;
+            });
+        })
+        .finally(() => {
+            try { if (secondary) secondary.delete(); } catch (_) {}
         });
+    });
 }
 
 // Function to load drivers table
@@ -193,20 +293,26 @@ function handleDriverAction(event) {
 }
 
 // Initialize drivers event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    const createBtn = document.getElementById('createDriverBtn');
-    if (createBtn) createBtn.addEventListener('click', createDriver);
-    const searchBtn = document.getElementById('searchDriverBtn');
-    if (searchBtn) searchBtn.addEventListener('click', searchDrivers);
-    const searchInput = document.getElementById('searchDriver');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') searchDrivers();
-        });
+(function() {
+    const attach = function() {
+        const createBtn = document.getElementById('createDriverBtn');
+        if (createBtn) createBtn.addEventListener('click', createDriver);
+        const searchBtn = document.getElementById('searchDriverBtn');
+        if (searchBtn) searchBtn.addEventListener('click', searchDrivers);
+        const searchInput = document.getElementById('searchDriver');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') searchDrivers();
+            });
+        }
+        const driversList = document.getElementById('driversList');
+        if (driversList) {
+            driversList.addEventListener('click', handleDriverAction);
+        }
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attach);
+    } else {
+        attach();
     }
-    // Event delegation for driver actions
-    const driversList = document.getElementById('driversList');
-    if (driversList) {
-        driversList.addEventListener('click', handleDriverAction);
-    }
-});
+})();

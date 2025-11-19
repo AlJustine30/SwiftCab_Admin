@@ -58,7 +58,7 @@ function computeRealtimeOnlineStatuses() {
 
 // Determine booked status via backend callable (no RTDB client reads)
 function computeBookedStatuses() {
-    const fn = firebase.functions().httpsCallable('getBookedDrivers');
+    const fn = (typeof functions !== 'undefined' ? functions : firebase.app().functions('us-central1')).httpsCallable('getBookedDrivers');
     return fn().then(res => {
         const ids = (res?.data?.driverIds || []).map(String);
         const set = new Set(ids);
@@ -279,14 +279,14 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ---- Live Driver Map (Leaflet) ----
-let driverMap = null;
-const driverMarkers = new Map(); // driverId -> L.Marker
-let driverMapTimer = null;
-let driverMapFocusUntil = 0; // ms timestamp to temporarily prevent auto-fit
-let driverMapAutoCenter = false; // do not auto-center on each refresh
+var driverMap = driverMap || null;
+var driverMarkers = driverMarkers || new Map(); // driverId -> L.Marker
+var driverMapTimer = driverMapTimer || null;
+var driverMapFocusUntil = driverMapFocusUntil || 0; // ms timestamp to temporarily prevent auto-fit
+var driverMapAutoCenter = driverMapAutoCenter || false; // do not auto-center on each refresh
 // Dagupan City, Pangasinan, Philippines
-const DAGUPAN_CENTER = [16.043, 120.333];
-const DAGUPAN_ZOOM = 13;
+var DAGUPAN_CENTER = typeof DAGUPAN_CENTER !== 'undefined' ? DAGUPAN_CENTER : [16.043, 120.333];
+var DAGUPAN_ZOOM = typeof DAGUPAN_ZOOM !== 'undefined' ? DAGUPAN_ZOOM : 13;
 
 function ensureLeafletLoaded() {
     return new Promise((resolve, reject) => {
