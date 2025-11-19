@@ -9,12 +9,22 @@ function countReportsToday() {
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
   const startMs = start.getTime();
   const endMs = end.getTime();
+  const startTs = firebase.firestore.Timestamp.fromDate(start);
+  const endTs = firebase.firestore.Timestamp.fromDate(end);
   db.collection('reports')
     .where('timestamp', '>=', startMs)
     .where('timestamp', '<=', endMs)
     .get()
     .then(qs => { countEl.textContent = qs.size || 0; })
-    .catch(() => { countEl.textContent = 0; });
+    .catch(() => {
+      // Fallback: handle Firestore Timestamp type
+      db.collection('reports')
+        .where('timestamp', '>=', startTs)
+        .where('timestamp', '<=', endTs)
+        .get()
+        .then(qs2 => { countEl.textContent = qs2.size || 0; })
+        .catch(() => { countEl.textContent = 0; });
+    });
 }
 
 function loadReports() {

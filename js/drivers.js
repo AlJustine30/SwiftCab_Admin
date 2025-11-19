@@ -265,19 +265,7 @@ function handleDriverAction(event) {
     if (action === 'view') {
         alert(`Driver Details:\nName: ${driver.name}\nEmail: ${driver.email}\nPhone: ${driver.phone}\nStatus: ${driver.runtimeStatus || driver.status}`);
     } else if (action === 'edit') {
-        const newStatus = prompt('Enter new status (active, inactive, pending):', driver.status);
-        if (newStatus && ['active', 'inactive', 'pending'].includes(newStatus)) {
-            db.collection("drivers").doc(driverId).update({
-                status: newStatus
-            })
-            .then(() => {
-                showToast('Driver updated successfully!');
-                loadDriverData();
-            })
-            .catch((error) => {
-                showToast('Error updating driver: ' + error.message, 'error');
-            });
-        }
+        openEditDriverModal(driver);
     } else if (action === 'delete') {
         if (confirm('Are you sure you want to delete this driver?')) {
             db.collection("drivers").doc(driverId).delete()
@@ -309,6 +297,10 @@ function handleDriverAction(event) {
         if (driversList) {
             driversList.addEventListener('click', handleDriverAction);
         }
+        const cancelBtn = document.getElementById('cancelEditDriverBtn');
+        if (cancelBtn) cancelBtn.addEventListener('click', closeEditDriverModal);
+        const saveBtn = document.getElementById('saveDriverBtn');
+        if (saveBtn) saveBtn.addEventListener('click', saveDriverEdits);
     };
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', attach);
@@ -316,3 +308,87 @@ function handleDriverAction(event) {
         attach();
     }
 })();
+
+function openEditDriverModal(driver) {
+    const modal = document.getElementById('editDriverModal');
+    if (!modal) return;
+    setInput('editDriverId', driver.id);
+    setInput('editDriverName', driver.name || '');
+    setInput('editDriverEmail', driver.email || '');
+    setInput('editDriverPhone', driver.phone || '');
+    setInput('editDriverLicense', driver.license || '');
+    setInput('editDriverAddress', driver.address || '');
+    const v = driver.vehicle || {};
+    setInput('editVehicleMake', v.make || '');
+    setInput('editVehicleModel', v.model || '');
+    setInput('editVehicleYear', v.year || '');
+    setInput('editVehicleColor', v.color || '');
+    setInput('editLicensePlate', v.licensePlate || '');
+    const statusSel = document.getElementById('editDriverStatus');
+    if (statusSel) statusSel.value = driver.status || 'active';
+    modal.style.display = 'flex';
+}
+
+function closeEditDriverModal() {
+    const modal = document.getElementById('editDriverModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function setInput(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+}
+
+function getInput(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+}
+
+function saveDriverEdits() {
+    const id = getInput('editDriverId');
+    const name = getInput('editDriverName').trim();
+    const email = getInput('editDriverEmail').trim();
+    const password = getInput('editDriverPassword').trim();
+    const phone = getInput('editDriverPhone').trim();
+    const license = getInput('editDriverLicense').trim();
+    const address = getInput('editDriverAddress').trim();
+    const vehicle = {
+        make: getInput('editVehicleMake').trim(),
+        model: getInput('editVehicleModel').trim(),
+        year: getInput('editVehicleYear').trim(),
+        color: getInput('editVehicleColor').trim(),
+        licensePlate: getInput('editLicensePlate').trim()
+    };
+    const statusEl = document.getElementById('editDriverStatus');
+    const status = statusEl ? statusEl.value : 'active';
+
+    if (!id || !name || !email) {
+        showToast('Name and email are required', 'error');
+        return;
+    }
+
+    const payload = { driverId: id, name, email, password: password || undefined, phone, license, address, vehicle, status };
+    const fn = (typeof functions !== 'undefined' ? functions : firebase.app().functions('us-central1')).httpsCallable('updateDriverAccount');
+    fn(payload)
+        .then(() => {
+            showToast('Driver updated successfully!');
+            closeEditDriverModal();
+            loadDriverData();
+        })
+        .catch(err => {
+            // Fallback: Firestore direct update
+            const updateDoc = {
+                name, email, phone, license, address, status, vehicle
+            };
+            db.collection('drivers').doc(id).set(updateDoc, { merge: true })
+                .then(() => db.collection('users').doc(id).set({ name, email, phone, status }, { merge: true }))
+                .then(() => {
+                    showToast('Driver updated (Firestore).');
+                    closeEditDriverModal();
+                    loadDriverData();
+                })
+                .catch(e => {
+                    showToast('Update failed: ' + (e?.message || e), 'error');
+                });
+        });
+}

@@ -133,17 +133,18 @@ function loadDriverStats() {
 
     // Removed: Pending Requests and Active Rides cards and their RTDB queries
 
-    // Read explicit reports from Firestore for today
+    // Robust unresolved reports count (any status not 'resolved')
     const ratingsPromise = db.collection('reports')
-        .where('timestamp', '>=', startMs)
-        .where('timestamp', '<=', endMs)
         .get()
-        .then(querySnapshot => {
-            // Count number of reports created today
-            setText('issueReports', querySnapshot.size || 0);
+        .then(qs => {
+            let unresolved = 0;
+            qs.forEach(doc => {
+                const st = String(doc.get('status') || 'open').toLowerCase();
+                if (st !== 'resolved') unresolved++;
+            });
+            setText('issueReports', unresolved);
         })
-        .catch(err => {
-            // If reports query fails, default to 0
+        .catch(() => {
             setText('issueReports', 0);
         });
 

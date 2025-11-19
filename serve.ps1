@@ -4,11 +4,20 @@ Param(
 
 $ErrorActionPreference = "Stop"
 
-$prefix = "http://localhost:$Port/"
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add($prefix)
-$listener.Start()
-Write-Host "Static server running at $prefix" -ForegroundColor Green
+for ($p = $Port; $p -le ($Port + 10); $p++) {
+    $listener = New-Object System.Net.HttpListener
+    try {
+        $prefix = "http://localhost:$p/"
+        $listener.Prefixes.Add($prefix)
+        $listener.Start()
+        Write-Host "Static server running at $prefix" -ForegroundColor Green
+        Start-Process $prefix
+        break
+    } catch {
+        try { $listener.Stop() } catch {}
+        if ($p -eq ($Port + 10)) { throw }
+    }
+}
 
 function Get-ContentType($path) {
     switch ([System.IO.Path]::GetExtension($path).ToLower()) {
