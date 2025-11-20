@@ -96,7 +96,6 @@ function createDriver() {
             const uid = cred && cred.user && cred.user.uid;
             if (!uid) throw new Error('Failed to get new user UID');
             return db.collection('drivers').doc(uid).set({ ...driver, uid })
-              .then(() => db.collection('users').doc(uid).set({ role: 'Driver', email, name, phone }, { merge: true }))
               .then(() => ({ uid }));
         })
         .then(() => {
@@ -129,7 +128,6 @@ function createDriver() {
                 const uid = json && json.localId;
                 if (!uid) throw new Error(json?.error?.message || 'Sign up failed');
                 return db.collection('drivers').doc(uid).set({ ...driver, uid })
-                  .then(() => db.collection('users').doc(uid).set({ role: 'Driver', email, name, phone }, { merge: true }))
                   .then(() => ({ uid }));
             })
             .then(() => {
@@ -381,7 +379,6 @@ function saveDriverEdits() {
                 name, email, phone, license, address, status, vehicle
             };
             db.collection('drivers').doc(id).set(updateDoc, { merge: true })
-                .then(() => db.collection('users').doc(id).set({ name, email, phone, status }, { merge: true }))
                 .then(() => {
                     showToast('Driver updated (Firestore).');
                     closeEditDriverModal();

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SwiftCab - Reports</title>
+    <title>SwiftCab - Manage Passengers</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Firebase SDK -->
@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div id="toast" class="toast"></div>
     <div id="adminDashboard" style="display: none;">
         <!-- Sidebar Navigation -->
         <div class="sidebar">
@@ -40,14 +41,14 @@
                 <i class="fas fa-money-bill-trend-up"></i>
                 <span>Earnings History</span>
             </a>
-            <a class="nav-item" href="manage-passengers.html" style="text-decoration:none;">
+            <div class="nav-item active">
                 <i class="fas fa-users"></i>
                 <span>Manage Passengers</span>
-            </a>
-            <div class="nav-item active">
+            </div>
+            <a class="nav-item" href="reports.html" style="text-decoration:none;">
                 <i class="fas fa-flag"></i>
                 <span>Incident Reports</span>
-            </div>
+            </a>
             <a class="nav-item" href="passenger-reports.html" style="text-decoration:none;">
                 <i class="fas fa-chart-line"></i>
                 <span>Passenger Reports</span>
@@ -61,7 +62,7 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="header">
-                <h1 id="sectionTitle">Incident Reports</h1>
+                <h1 id="sectionTitle">Manage Passengers</h1>
                 <div class="user-info">
                     <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="Admin User">
                     <div>
@@ -71,39 +72,57 @@
                 </div>
             </div>
 
+            <!-- Manage Passengers Content -->
             <div class="content-section" style="display: block;">
                 <div class="section-header">
-                    <h2>Today’s Incidents</h2>
-                    <div style="display:flex; gap:0.5rem; align-items:center;">
-                        <button class="btn" id="filterAllBtn">All</button>
-                        <button class="btn" id="filterOpenBtn">Open</button>
-                        <button class="btn" id="filterResolvedBtn">Resolved</button>
-                        <button class="btn btn-primary" id="refreshReportsBtn">Refresh</button>
+                    <h2>Manage Passengers</h2>
+                    <div>
+                        <input type="text" id="searchPassenger" placeholder="Search passengers..." style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--gray); margin-right: 1rem;">
+                        <button class="btn btn-primary" id="searchPassengerBtn">Search</button>
                     </div>
                 </div>
-
-                <div style="margin-bottom:12px; color:#556;">
-                    <span>Incidents today: </span>
-                    <strong id="reportsTodayCount">0</strong>
-                </div>
-
 
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th>Time</th>
-                                <th>Category</th>
-                                <th>Message</th>
-                                <th>Driver</th>
-                                <th>Reporter</th>
-                                <th>Booking</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th>Passenger</th>
+                                <th>Contact</th>
+                                <th>Loyalty Points</th>
+                                <th>Last Booking</th>
                             </tr>
                         </thead>
-                        <tbody id="reportsList">
-                            <!-- Populated by JS -->
+                        <tbody id="passengersList">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="passengerBookingModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div id="passengerBookingModal" style="background:#fff; border-radius:8px; width:95%; max-width:1200px; max-height:85vh; overflow:auto; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid #eee;">
+                <h2 id="passengerBookingModalTitle" style="margin:0; font-size:20px;">Last Booking</h2>
+                <button id="closePassengerBookingModalBtn" class="btn" style="background:#eee; color:#333;">Close</button>
+            </div>
+            <div style="padding:16px;">
+                <div id="passengerBookingModalMeta" style="margin-bottom:12px; color:#555;"></div>
+                <div class="table-container" style="padding:4px 0;">
+                    <table class="modal-table" style="width:100%; table-layout:fixed;">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Pickup</th>
+                                <th>Destination</th>
+                                <th>Driver</th>
+                                <th>Status</th>
+                                <th>Fare</th>
+                                <th>Booking ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="passengerLastBookingDetails">
                         </tbody>
                     </table>
                 </div>
@@ -114,7 +133,8 @@
     <!-- JavaScript Files -->
     <script src="js/firebase-config.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/dashboard.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/reports.js"></script>
+    <script src="js/passengers.js"></script>
 </body>
 </html>

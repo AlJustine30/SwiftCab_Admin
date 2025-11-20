@@ -18,9 +18,20 @@ const functions = firebase.app().functions('us-central1');
 
 // Gracefully close Firestore connections when the page is being unloaded
 // to avoid aborted long‑poll/XHR warnings in the console.
+let __networkDisabled = false;
 window.addEventListener('pagehide', () => {
-  try { db.terminate(); } catch (e) { /* ignore */ }
+  try {
+    if (!__networkDisabled) {
+      __networkDisabled = true;
+      db.disableNetwork().catch(() => {});
+    }
+  } catch (e) {}
 });
 window.addEventListener('unload', () => {
-  try { db.terminate(); } catch (e) { /* ignore */ }
+  try {
+    if (!__networkDisabled) {
+      __networkDisabled = true;
+      db.disableNetwork().catch(() => {});
+    }
+  } catch (e) {}
 });
