@@ -15,14 +15,13 @@
     <!-- Styles -->
     <link rel="stylesheet" href="css/login.css">
     <link rel="stylesheet" href="css/style.css">
-    <!-- Leaflet CSS for keyless maps -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
     <!-- Login Screen (initially hidden; shown if not signed in) -->
     <div id="loginScreen" class="login-container" style="display: none;">
         <div class="login-form">
-            <h1><i class="fas fa-taxi"></i> SwiftCab Admin</h1>
+            <img src="img/swiftcab.png" alt="SwiftCab" style="height:120px; display:block; margin:0 auto 16px auto;">
+            <h1>SwiftCab Admin</h1>
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" placeholder="admin@swiftcab.com">
@@ -47,7 +46,7 @@
         <!-- Sidebar Navigation -->
         <div class="sidebar">
             <div class="logo">
-                <i class="fas fa-taxi"></i>
+                <img src="img/swiftcab.png" alt="SwiftCab" style="height:44px; margin-right:0.75rem;">
                 <h2>SwiftCab</h2>
             </div>
             <div class="nav-item active" data-section="dashboard">
@@ -66,9 +65,17 @@
                 <i class="fas fa-money-bill-trend-up"></i>
                 <span>Earnings History</span>
             </a>
+            <a class="nav-item" href="manage-passengers.html" style="text-decoration:none;">
+                <i class="fas fa-users"></i>
+                <span>Manage Passengers</span>
+            </a>
             <a class="nav-item" href="reports.html" style="text-decoration:none;">
                 <i class="fas fa-flag"></i>
-                <span>Reports</span>
+                <span>Incident Reports</span>
+            </a>
+            <a class="nav-item" href="passenger-reports.html" style="text-decoration:none;">
+                <i class="fas fa-chart-line"></i>
+                <span>Passenger Reports</span>
             </a>
             
             <div class="nav-item" id="logoutBtn">
@@ -118,7 +125,7 @@
                         </div>
                         <div class="info">
                             <h3 id="issueReports">0</h3>
-                            <p>Unresolved Reports</p>
+                            <p>Unresolved Incidents</p>
                         </div>
                     </div>
                     <!-- Merged monitoring stats into top section -->
@@ -155,15 +162,11 @@
                     </table>
                 </div>
 
-                <!-- Removed duplicate Driver Monitoring stat cards to reduce space -->
-
-                <!-- Drivers section removed; use Manage Drivers page for full driver list -->
-
-                <!-- Earnings History moved to a dedicated page (earnings.html) -->
-
                 <div class="section-header" style="margin-top: 2rem;">
                     <h2>Driver Earnings Today</h2>
-                    <div>
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <button class="btn" id="earningsPrevBtn" title="Previous">◀</button>
+                        <button class="btn" id="earningsNextBtn" title="Next">▶</button>
                         <button class="btn btn-primary" id="refreshEarningsBtn">Refresh</button>
                     </div>
                 </div>
@@ -185,7 +188,9 @@
                 <!-- Live Driver Locations Map -->
                 <div class="card" style="background:#e2e8f0; margin-top: 2rem;">
                     <div id="driverMap" style="width:100%; height:420px; background:#fff; border-radius:8px;"></div>
-                    <div id="mapStatus" style="padding:10px 16px; color:#556; font-size:0.9rem;">Updating driver locations every 10 seconds</div>
+                    <div id="mapStatus" style="padding:10px 16px; color:#556; font-size:0.9rem; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                        <span id="mapStatusText">Updating driver locations every 10 seconds</span>
+                    </div>
                 </div>
             </div>
 
@@ -199,10 +204,9 @@
     <script src="js/utils.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/dashboard.js"></script>
     <script src="js/drivers.js"></script>
-    <!-- Leaflet JS for keyless maps -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    
 
 </body>
 </html>

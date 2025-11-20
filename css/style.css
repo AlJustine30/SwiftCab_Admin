@@ -338,6 +338,28 @@ tbody tr:hover {
     to { transform: rotate(360deg); }
 }
 
+/* Pager buttons */
+#earningsPrevBtn, #earningsNextBtn {
+    min-width: 40px;
+}
+
+/* Manage Passengers: Last Booking column */
+.last-booking-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+}
+.last-booking-date {
+    color: var(--secondary);
+    white-space: nowrap;
+}
+.last-booking-view {
+    min-width: 90px;
+    text-align: center;
+}
+
 /* Responsive */
 @media (max-width: 992px) {
     .sidebar {

@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!user) {
       // Disable Firestore network before redirect to avoid aborted Listen/XHR
       try {
-        db.terminate().catch(() => {}).finally(() => {
+        db.disableNetwork().catch(() => {}).finally(() => {
           window.location.replace('index.html');
         });
       } catch (_) {

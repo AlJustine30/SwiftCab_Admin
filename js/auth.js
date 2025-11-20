@@ -1,3 +1,4 @@
+let __adminClaimRequested = false;
 // Function to handle login
 function login() {
     const emailEl = document.getElementById('email');
@@ -43,15 +44,6 @@ function login() {
                     return { becameAdmin: false };
                 })
                 .then(async () => {
-                    // Ensure we have admin custom claim for RTDB access
-                    try {
-                        const promote = firebase.functions().httpsCallable('promoteSelfToAdmin');
-                        await promote();
-                        await auth.currentUser.getIdToken(true); // refresh token to include claim
-                    } catch (e) {
-                        // Non-blocking; RTDB reads may fail if rules require admin claim
-                        console.warn('promoteSelfToAdmin failed:', e?.message || e);
-                    }
                     // Proceed to dashboard as Admin
                     currentUser = user;
                     document.getElementById('loginScreen').style.display = 'none';
@@ -59,6 +51,15 @@ function login() {
                     document.getElementById('adminName').textContent = currentUser.email;
                     loadDriverData();
                     loadDriverStats();
+                    try {
+                        const k = 'AIzaSyDrtJTXyKqejETyvnnrP0tYWBbWxO3ZOAY';
+                        localStorage.setItem('GMAPS_API_KEY', k);
+                        window.GMAPS_API_KEY = k;
+                        driverMap = null;
+                        initDriverMapIfNeeded();
+                        refreshDriverMap();
+                        startDriverMapAutoRefresh();
+                    } catch (_) {}
                 });
         })
         .catch((error) => {
@@ -106,13 +107,15 @@ auth.onAuthStateChanged((user) => {
                 }, { merge: true });
             }
         }).then(async () => {
-            // Ensure admin custom claim
-            try {
-                const promote = firebase.functions().httpsCallable('promoteSelfToAdmin');
-                await promote();
-                await auth.currentUser.getIdToken(true);
-            } catch (e) {
-                console.warn('promoteSelfToAdmin failed:', e?.message || e);
+            if (!__adminClaimRequested) {
+                __adminClaimRequested = true;
+                try {
+                    const promote = (typeof functions !== 'undefined' ? functions : firebase.app().functions('us-central1')).httpsCallable('promoteSelfToAdmin');
+                    await promote();
+                    await auth.currentUser.getIdToken(true);
+                } catch (e) {
+                    console.warn('promoteSelfToAdmin failed:', e?.message || e);
+                }
             }
             currentUser = user;
             if (loginScreen) loginScreen.style.display = 'none';
@@ -120,6 +123,15 @@ auth.onAuthStateChanged((user) => {
             if (adminName) adminName.textContent = currentUser.email;
             loadDriverData();
             loadDriverStats();
+            try {
+                const k = 'AIzaSyDrtJTXyKqejETyvnnrP0tYWBbWxO3ZOAY';
+                localStorage.setItem('GMAPS_API_KEY', k);
+                window.GMAPS_API_KEY = k;
+                driverMap = null;
+                initDriverMapIfNeeded();
+                refreshDriverMap();
+                startDriverMapAutoRefresh();
+            } catch (_) {}
         });
     } else {
         if (loginScreen) loginScreen.style.display = 'flex';

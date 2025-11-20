@@ -171,6 +171,137 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) logoutBtn.addEventListener('click', () => auth.signOut().then(() => window.location.href = 'index.html'));
+
+  const loadUsageBtn = document.getElementById('loadUsageBtn');
+  if (loadUsageBtn) loadUsageBtn.addEventListener('click', loadPassengerUsage);
+  const dateInput = document.getElementById('usageDate');
+  if (dateInput) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    dateInput.value = `${y}-${m}-${d}`;
+  }
 });
+
+function loadPassengerUsage() {
+  const dateInput = document.getElementById('usageDate');
+  const chartCanvas = document.getElementById('usageChart');
+  const timesTbody = document.getElementById('usageTimesList');
+  if (!dateInput || !chartCanvas || !timesTbody) return;
+  const val = dateInput.value;
+  if (!val) return;
+  const [year, month, day] = val.split('-').map(Number);
+  const start = new Date(year, month - 1, day, 0, 0, 0, 0);
+  const end = new Date(year, month - 1, day, 23, 59, 59, 999);
+  const startMs = start.getTime();
+  const endMs = end.getTime();
+
+  db.collection('bookinghistory')
+    .where('timestamp', '>=', startMs)
+    .where('timestamp', '<=', endMs)
+    .get()
+    .then(qs => {
+      const hourCounts = new Array(24).fill(0);
+      const rows = [];
+      qs.forEach(doc => {
+        const ts = doc.get('timestamp');
+        const riderId = doc.get('riderId');
+        const status = (doc.get('status') || '').toString();
+        let t = null;
+        if (typeof ts === 'number') t = new Date(ts);
+        else if (ts && ts.toDate) t = ts.toDate();
+        if (!t) return;
+        hourCounts[t.getHours()]++;
+        rows.push({ time: t, riderId: riderId || '—', status: status || '—' });
+      });
+      drawBarChart(chartCanvas, hourCounts);
+      renderUsageTimesList(timesTbody, rows);
+    })
+    .catch(() => {
+      // Fallback: Timestamp type
+      db.collection('bookinghistory')
+        .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(start))
+        .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(end))
+        .get()
+        .then(qs2 => {
+          const hourCounts = new Array(24).fill(0);
+          const rows = [];
+          qs2.forEach(doc => {
+            const ts = doc.get('timestamp');
+            const riderId = doc.get('riderId');
+            const status = (doc.get('status') || '').toString();
+            let t = null;
+            if (ts && ts.toDate) t = ts.toDate();
+            if (!t) return;
+            hourCounts[t.getHours()]++;
+            rows.push({ time: t, riderId: riderId || '—', status: status || '—' });
+          });
+          drawBarChart(chartCanvas, hourCounts);
+          renderUsageTimesList(timesTbody, rows);
+        })
+        .catch(err => {
+          showToast('Failed to load usage report: ' + (err?.message || err), 'error');
+        });
+    });
+}
+
+function drawBarChart(canvas, data) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const width = canvas.width;
+  const height = canvas.height;
+  const padding = 32;
+  const chartWidth = width - padding * 2;
+  const chartHeight = height - padding * 2;
+  const maxVal = Math.max(1, ...data);
+  const barWidth = chartWidth / data.length;
+
+  // Axes
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(padding, padding + chartHeight);
+  ctx.lineTo(padding + chartWidth, padding + chartHeight);
+  ctx.stroke();
+
+  // Bars
+  for (let i = 0; i < data.length; i++) {
+    const val = data[i];
+    const barHeight = Math.round((val / maxVal) * (chartHeight - 20));
+    const x = padding + i * barWidth + 2;
+    const y = padding + chartHeight - barHeight;
+    ctx.fillStyle = '#3b82f6';
+    ctx.fillRect(x, y, barWidth - 4, barHeight);
+    // Hour label
+    ctx.fillStyle = '#475569';
+    ctx.font = '10px Roboto, Arial';
+    const label = String(i).padStart(2, '0');
+    ctx.fillText(label, x + 2, padding + chartHeight + 12);
+  }
+
+  // Title
+  ctx.fillStyle = '#0f172a';
+  ctx.font = '12px Roboto, Arial';
+  ctx.fillText('Bookings per hour (00-23)', padding, padding - 8);
+}
+
+function renderUsageTimesList(tbody, rows) {
+  // Sort by time ascending
+  rows.sort((a, b) => a.time.getTime() - b.time.getTime());
+  const html = rows.map((r, idx) => {
+    const timeStr = r.time.toLocaleString();
+    return `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${timeStr}</td>
+        <td>${r.riderId}</td>
+        <td>${r.status}</td>
+      </tr>
+    `;
+  }).join('');
+  tbody.innerHTML = html || '<tr><td colspan="4">No bookings found for selected day.</td></tr>';
+}
 
 
