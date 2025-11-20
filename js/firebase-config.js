@@ -11,7 +11,7 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const database = firebase.firestore();
+const db = firebase.firestore();
 const rtdb = firebase.database();
 // Use explicit region for Callable Functions
 const functions = firebase.app().functions('us-central1');

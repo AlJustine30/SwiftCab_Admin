@@ -29,7 +29,7 @@ function login() {
         .then((userCredential) => {
             const user = userCredential.user;
             // Ensure a user profile exists with Admin role; provision if missing
-            const userRef = db.collection('user5').doc(user.uid);
+            const userRef = db.collection('users').doc(user.uid);
             return userRef.get()
                 .then(doc => {
                     if (!doc.exists || doc.data().role !== 'Admin') {

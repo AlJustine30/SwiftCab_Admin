@@ -131,8 +131,6 @@ function loadDriverStats() {
             setText('completedRides', 0);
         });
 
-    // Removed: Pending Requests and Active Rides cards and their RTDB queries
-
     // Robust unresolved reports count (any status not 'resolved')
     const ratingsPromise = db.collection('reports')
         .get()
@@ -282,7 +280,6 @@ function loadDriverEarningsToday() {
     });
 }
 
-// Earnings History moved to earnings.html
 
 // Initialize dashboard event listeners
 document.addEventListener('DOMContentLoaded', function() {
